@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 // Estructura de un nodo del árbol
 typedef struct Nodo {
     char operador;
     int valor;
+    char variable;
     struct Nodo *izq, *der;
 } Nodo;
 
+Nodo* evaluarSumaResta(const char **ptr); // Declaración de la función
 
 Nodo* nuevoNodoOperador(char operador, Nodo* izq, Nodo* der) {
     Nodo* nodo = (Nodo*)malloc(sizeof(Nodo));
@@ -19,7 +22,6 @@ Nodo* nuevoNodoOperador(char operador, Nodo* izq, Nodo* der) {
     return nodo;
 }
 
-
 Nodo* nuevoNodoNumero(int valor) {
     Nodo* nodo = (Nodo*)malloc(sizeof(Nodo));
     nodo->operador = '\0';
@@ -28,11 +30,9 @@ Nodo* nuevoNodoNumero(int valor) {
     return nodo;
 }
 
-
 void saltarEspacios(const char **ptr) {
     while (**ptr == ' ') (*ptr)++;
 }
-
 
 Nodo* obtenerNumero(const char **ptr) {
     saltarEspacios(ptr);
@@ -44,9 +44,40 @@ Nodo* obtenerNumero(const char **ptr) {
     return nuevoNodoNumero(valor);
 }
 
+int isVariable(const char* c) {
+    return isalpha(*c);
+}
 
-Nodo* evaluarFactor(const char **ptr);
+Nodo* obtenerVariable(const char **ptr) {
+    saltarEspacios(ptr);
+    char variable[100];
+    int i = 0;
+    while (isalpha(**ptr) || isdigit(**ptr)) {
+        variable[i++] = **ptr;
+        (*ptr)++;
+    }
+    variable[i] = '\0';
+    int valor;
+    printf("Ingrese el valor de la variable %s: ", variable);
+    scanf("%d", &valor);
+    Nodo* nodo = nuevoNodoNumero(valor);
+    nodo->variable = variable[0]; 
+    return nodo;
+}
 
+Nodo* evaluarFactor(const char **ptr) {
+    saltarEspacios(ptr);
+    if (**ptr == '(') {  
+        (*ptr)++; 
+        Nodo* nodo = evaluarSumaResta(ptr);
+        (*ptr)++; 
+        return nodo;
+    }
+    if (isVariable(*ptr)) {
+        return obtenerVariable(ptr);
+    }
+    return obtenerNumero(ptr);
+}
 
 Nodo* evaluarMultiplicacionDivision(const char **ptr) {
     Nodo* nodo = evaluarFactor(ptr);
@@ -64,7 +95,6 @@ Nodo* evaluarMultiplicacionDivision(const char **ptr) {
     return nodo;
 }
 
-
 Nodo* evaluarSumaResta(const char **ptr) {
     Nodo* nodo = evaluarMultiplicacionDivision(ptr);
     while (1) {
@@ -81,23 +111,9 @@ Nodo* evaluarSumaResta(const char **ptr) {
     return nodo;
 }
 
-
-Nodo* evaluarFactor(const char **ptr) {
-    saltarEspacios(ptr);
-    if (**ptr == '(') {  
-        (*ptr)++; 
-        Nodo* nodo = evaluarSumaResta(ptr);
-        (*ptr)++; 
-        return nodo;
-    }
-    return obtenerNumero(ptr);
-}
-
-
 Nodo* construirArbol(const char *expresion) {
     return evaluarSumaResta(&expresion);
 }
-
 
 int evaluarArbol(Nodo* raiz) {
     if (!raiz) return 0;
@@ -115,7 +131,6 @@ int evaluarArbol(Nodo* raiz) {
     return 0;
 }
 
-
 // void imprimirArbol(Nodo* nodo, int nivel) {
 //     if (!nodo) return;
 //     imprimirArbol(nodo->der, nivel + 1);
@@ -127,7 +142,6 @@ int evaluarArbol(Nodo* raiz) {
 //     imprimirArbol(nodo->izq, nivel + 1);
 // }
 
-
 void liberarArbol(Nodo* nodo) {
     if (!nodo) return;
     liberarArbol(nodo->izq);
@@ -135,16 +149,27 @@ void liberarArbol(Nodo* nodo) {
     free(nodo);
 }
 
-
 int main() {
-    const char expresion[] = "50/(5+5)*(6-2)-3";
-    Nodo* raiz = construirArbol(expresion);
+    char expresion[256];
+    FILE *archivo = fopen("ecuacion.txt", "r");
+    if (!archivo) {
+        perror("Error al abrir el archivo");
+        return 1;
+    }
 
-    //printf("Árbol de expresión:\n");
-    //imprimirArbol(raiz, 0);
+    if (fgets(expresion, sizeof(expresion), archivo) != NULL) {
+        Nodo* raiz = construirArbol(expresion);
 
-    printf("\nResultado: %d\n", evaluarArbol(raiz));
+        //printf("Árbol de expresión:\n");
+        //imprimirArbol(raiz, 0);
 
-    liberarArbol(raiz);
+        printf("\nResultado: %d\n", evaluarArbol(raiz));
+
+        liberarArbol(raiz);
+    } else {
+        printf("El archivo está vacío o no se pudo leer la expresión.\n");
+    }
+
+    fclose(archivo);
     return 0;
 }
