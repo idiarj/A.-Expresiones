@@ -11,7 +11,25 @@ typedef struct Nodo {
     struct Nodo *izq, *der;
 } Nodo;
 
-Nodo* evaluarSumaResta(const char **ptr); // Declaración de la función
+Nodo* evaluarSumaResta(const char **ptr);
+
+int validarParentesis(const char* expresion) {
+    int contador = 0;
+    int posUltimoAbierto = -1;
+    
+    for(int i = 0; expresion[i] != '\0'; i++) {
+        if(expresion[i] == '(') {
+            contador++;
+            posUltimoAbierto = i;
+        }
+        else if(expresion[i] == ')') {
+            if(contador <= 0) return 0;  
+            if(i == posUltimoAbierto + 1) return 0;  
+            contador--;
+        }
+    }
+    return contador == 0;  
+}
 
 Nodo* nuevoNodoOperador(char operador, Nodo* izq, Nodo* der) {
     Nodo* nodo = (Nodo*)malloc(sizeof(Nodo));
@@ -131,17 +149,6 @@ int evaluarArbol(Nodo* raiz) {
     return 0;
 }
 
-// void imprimirArbol(Nodo* nodo, int nivel) {
-//     if (!nodo) return;
-//     imprimirArbol(nodo->der, nivel + 1);
-//     for (int i = 0; i < nivel; i++) printf("   ");
-//     if (nodo->operador)
-//         printf("%c\n", nodo->operador);
-//     else
-//         printf("%d\n", nodo->valor);
-//     imprimirArbol(nodo->izq, nivel + 1);
-// }
-
 void liberarArbol(Nodo* nodo) {
     if (!nodo) return;
     liberarArbol(nodo->izq);
@@ -158,13 +165,14 @@ int main() {
     }
 
     if (fgets(expresion, sizeof(expresion), archivo) != NULL) {
+        if (!validarParentesis(expresion)) {
+            printf("Error: Los parentesis en la expresion no son validos\n");
+            fclose(archivo);
+            return 1;
+        }
+
         Nodo* raiz = construirArbol(expresion);
-
-        //printf("Árbol de expresión:\n");
-        //imprimirArbol(raiz, 0);
-
         printf("\nResultado: %d\n", evaluarArbol(raiz));
-
         liberarArbol(raiz);
     } else {
         printf("El archivo está vacío o no se pudo leer la expresión.\n");
