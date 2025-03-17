@@ -41,7 +41,7 @@ Nodo* nuevoNodoOperador(char operador, Nodo* izq, Nodo* der) {
 }
 
 Nodo* nuevoNodoNumero(int valor) {
-    Nodo* nodo = (Nodo*)malloc(sizeof(Nodo));
+    Nodo* nodo = (Nodo*)malloc(sizeof(Nodo)); 
     nodo->operador = '\0';
     nodo->valor = valor;
     nodo->izq = nodo->der = NULL;
@@ -139,6 +139,13 @@ int evaluarArbol(Nodo* raiz) {
 
     int izq = evaluarArbol(raiz->izq);
     int der = evaluarArbol(raiz->der);
+
+    if(raiz->operador == '/'){
+        if(der == 0){
+            printf("Error: División por cero\n");
+            exit(1);
+        }
+    }
 
     switch (raiz->operador) {
         case '+': return izq + der;
